@@ -10,56 +10,57 @@
 !***********************************************************************************************************!
 
 module access_data
+
 implicit none
 contains
+
 !***********************************************************************************************************!
-!-----------------------------
+!***********************************************************************************************************!
 !SUBROUTINE
 subroutine READFILE(pathFile, tab, n)
 !READFILE, lit les fichiers et retourne un tableau de données, ainsi que le nombre d'enregistrements
-!   -
-!-----------------------------
+!   -pathFile :: chemins d'accès au fichier
+!   -tab :: tableau d'élémént retourné par le fichier
+!   -n :: nombre d'éléments contenu dans le tableau
+!***********************************************************************************************************!
 !Specification
 
     character(200), intent(in)      ::pathFile
-    character(1),  intent(out),allocatable, dimension(:,:,:)      ::tab
+    integer,  intent(out),allocatable, dimension(:,:)      ::tab
     integer, intent(in)             ::n
 
-!-----------------------------
+!***********************************************************************************************************!
 !Declaration
     logical                         ::exist
-    integer                         ::io,  i, nelmt
+    integer                         ::io,  i, j, nelmt
     character(20)                   ::str
     character(1)                    ::sep
-    integer, dimension(3)     ::elmt
+    integer, dimension(3)           ::elmt
 
-!-----------------------------
-
-!-----------------------------
+!***********************************************************************************************************!
 !Body
-    allocate(tab(n,n,n))
-    tab(1,1,1) = "0"
+    allocate(tab(n,3))
+    !Vérification de l'existence du fichier
     inquire(file=pathFile,exist= exist)
     if (.NOT. exist) then
-        print *, "No such file"
+        print *, "Erreur! Fichier non existant"
         return
     endif
-    print *, pathFile
 
     !Ouverture du fichier
     open(10, file=pathFile)
-    !Lecture du fichier
-    do
+    !Lecture du fichier sur n lignes (on les a récupéré avec NUMRECORD
+    do i = 1, n
         read(10,1000,iostat=io)str
         !Test de fin de fichier
         if(io < 0) exit
         sep = ";"
-        print *, "Appel de SPLIT"
+        !Récupération des éléments contenus dans la chaîne
         call SPLIT(str, sep, elmt, nelmt)
-        do i = 1, nelmt
-            print *, elmt(i)
-        end do
 
+        do j = 1, nelmt
+            tab(i,j) = elmt(j)
+            end do
     enddo
     !Fermeture du fichier
     close(10)
@@ -69,28 +70,28 @@ deallocate (tab)
 end subroutine READFILE
 
 !***********************************************************************************************************!
-!-----------------------------
+!***********************************************************************************************************!
 !SUBROUTINE
 subroutine NUMRECORD(pathFile, n)
 !READFILE, lit les fichiers et retourne un tableau de données, ainsi que le nombre d'enregistrements
 
-!-----------------------------
+!***********************************************************************************************************!
 !Specification
 
     character(200), intent(in)      ::pathFile
     integer, intent(out)            ::n
 
-!-----------------------------
+!***********************************************************************************************************!
 !Declaration
     logical                         ::exist
     integer                         ::io
 
     n = 0
-!-----------------------------
+!***********************************************************************************************************!
 !Body
     inquire(file=pathFile,exist= exist)
     if (.NOT. exist) then
-        print *, "No such file"
+        print *, "Erreur! Fichier non existant"
         return
     endif
 
@@ -165,16 +166,16 @@ program MAIN
 use access_data
 !Declaration
     implicit none
-    character(200)          ::pathUncleaned
-    character(1),allocatable, dimension(:,:,:)      ::tab
+    character(200)          ::path
+    integer,allocatable, dimension(:,:)      ::tab
     integer                 ::n
 !-----------------------------
 
 !-----------------------------
 !Body
-    pathUncleaned = "E:\Python\graphe\SIFF.txt"
-    print *, "appel de la subroutine NUMRECORD"
-    call NUMRECORD(pathUncleaned, n)
+    path = "E:\Python\graphe\SIFF.txt"
+    print *, "SUBROUTINE NUMRECORD",
+    call NUMRECORD(path, n)
     print *, "Nombre de ligne dans le fichier ", n
     !allocate(tab(n,n,n))
 
