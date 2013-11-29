@@ -625,13 +625,14 @@ use tables_de_graphe
 use lire_donnees
 use topologie
 
+
 !Declaration
     implicit none
     character(200)          ::path
     integer                 ::i,j
-    !Variables pour PSS
-    integer, allocatable, dimension (:) :: TPSS            !
-    integer                :: npss
+    !Variables pour stocker les sommets
+    integer, allocatable, dimension (:) :: TS
+    integer                :: nsommet
 !-----------------------------
 
 !-----------------------------
@@ -650,22 +651,43 @@ use topologie
     print *, "appel de la subroutine READFILE"
     call READFILE(path, SIF, NA)
     print *, "Fin de l'appel de subroutine"
+    print *, "************************************************************************************"
 
     !Affichage de la table SIF
     do i = 1, NA
-        print *, "Arc:"
+        print *, "Arc: ", i
         do j = 1, 2
             print *, SIF(i,j)
         end do
         print *, ""
     end do
+    print *, "************************************************************************************"
 
-    allocate(TPSS(NA))
-    call PSS (2, TPSS, npss, 1 )
-    print *, "PSS"
-    do i = 1, npss
-        print *, TPSS(i)
+    allocate(TS(NA))
+
+    !Test ESS
+    nsommet = 0
+    print *, "TEST ESS"
+    call ESS (5, TS, nsommet, 1 )
+    do i = 1, nsommet
+        print *, TS(i)
     end do
+    print *,""
+    print *, "************************************************************************************"
+    !Fin test ESS
+
+    deallocate(TS)
+    allocate(TS(NA))
+
+    !Test PSS
+    print *, "TEST PSS"
+    call PSS (5, TS, nsommet, 1 )
+    do i = 1, nsommet
+        print *, TS(i)
+    end do
+    print *,""
+    print *, "************************************************************************************"
+    !Fin test PSS
 
 end program MAIN
 !-----------------------------
