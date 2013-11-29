@@ -72,7 +72,7 @@ contains
 
     !***********************************************************************************************************!
     !Body
-        allocate(tab(n,3))
+        allocate(tab(n,2))
         !Verification de l'existence du fichier
         inquire(file=pathFile,exist= exist)
         if (.NOT. exist) then
@@ -98,7 +98,7 @@ contains
         !Fermeture du fichier
         close(10)
 
-    deallocate (tab)
+
     1000 FORMAT(a10)
     end subroutine READFILE
 
@@ -231,7 +231,7 @@ implicit none
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: s             !
-      integer, intent (out),dimension (1:10) :: TA            !
+      integer, intent (out),dimension (1:NA) :: TA            !
       integer, intent (out)                  :: nta           !
       integer, intent (in)                   :: k             !
    !----------------------------------------------------------!
@@ -301,7 +301,7 @@ implicit none
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: a             !
-      integer, intent (out),dimension (1:10) :: TA            !
+      integer, intent (out),dimension (1:NA) :: TA            !
       integer, intent (out)                  :: nta           !
       integer, intent (in)                   :: k             !
    !----------------------------------------------------------!
@@ -630,8 +630,8 @@ use topologie
     implicit none
     character(200)          ::path
     integer                 ::i,j
-    !Variables pour stocker les sommets
-    integer, allocatable, dimension (:) :: TS
+    !Variables pour stocker les sommets et les arcs
+    integer, allocatable, dimension (:) :: TESS, TPSS, TPSA
     integer                :: nsommet
 !-----------------------------
 
@@ -663,31 +663,46 @@ use topologie
     end do
     print *, "************************************************************************************"
 
-    allocate(TS(NA))
+    allocate(TESS(NA))
 
     !Test ESS
     nsommet = 0
     print *, "TEST ESS"
-    call ESS (5, TS, nsommet, 1 )
+    call ESS (5, TESS, nsommet, 1 )
     do i = 1, nsommet
-        print *, TS(i)
+        print *, TESS(i)
     end do
     print *,""
     print *, "************************************************************************************"
     !Fin test ESS
 
-    deallocate(TS)
-    allocate(TS(NA))
+    allocate(TPSS(NA))
 
     !Test PSS
+    nsommet = 0
     print *, "TEST PSS"
-    call PSS (5, TS, nsommet, 1 )
+    call PSS (5, TPSS, nsommet, 1 )
+    print *, "nb sommets ", nsommet
     do i = 1, nsommet
-        print *, TS(i)
+        print *, TPSS(i)
     end do
     print *,""
     print *, "************************************************************************************"
     !Fin test PSS
+
+    allocate(TPSA(NA))
+    !Test PSA
+    nsommet = 0
+    print *, "TEST PSA"
+    call PSA (5, TPSA, nsommet, 1 )
+    print *, "nb arcs ", nsommet
+    do i = 1, nsommet
+        print *, TPSA(i)
+    end do
+    print *,""
+    print *, "************************************************************************************"
+    !Fin test PSS
+
 
 end program MAIN
 !-----------------------------
