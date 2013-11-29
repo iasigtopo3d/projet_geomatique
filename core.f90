@@ -2,18 +2,47 @@
 !WORLD COMPANY IASIG 2013
 !GSE - OTH - PFO
 
+
+
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!MODULE TABLES_DE_GRAPHE
+! ce module contient seulement la description des tables exprimant la topologie d'un graphe.
+!SIF, SXY, PAXY
+!   -NUMRECORD, retourne le nombre d'enregistrements des differents fichiers
+!   -READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
+!   -SPLIT, ce charge de separer une ligne du fichier en element indice.
+!***********************************************************************************************************!
+
+module tables_de_graphe
+
+implicit none ;
+
+!***********************************************************************************************************!
+!Declaration
+   integer                               :: NA, NS, ND,NAXY
+   integer, dimension (:,:), allocatable :: SIF, GD
+   integer, dimension (:,:), allocatable :: SXY, AXY, PAXY
+
+
+end module tables_de_graphe
+!***********************************************************************************************************!
+
+
+
 !***********************************************************************************************************!
 !***********************************************************************************************************!
 !***********************************************************************************************************!
 !MODULE ACCESS_DATA
-!Ce module contient les fonctions n�cessaires pour r�cup�rer les donn�es stock�es dans les tables:
+!Ce module contient les fonctions necessaires pour recuperer les donnees stockees dans les tables:
 !SIF, SXY, PAXY
-!   -NUMRECORD, retourne le nombre d'enregistrements des diff�rents fichiers
-!   -READFILE, lit les fichiers et retourne un tableau de donn�es, ainsi que le nombre d'enregistrements
-!   -SPLIT, ce charge de s�parer une ligne du fichier en �l�ment indic�.
+!   -NUMRECORD, retourne le nombre d'enregistrements des differents fichiers
+!   -READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
+!   -SPLIT, ce charge de separer une ligne du fichier en element indice.
 !***********************************************************************************************************!
 
-module access_data
+module lire_donnees
 
 implicit none
 contains
@@ -22,10 +51,10 @@ contains
 !***********************************************************************************************************!
 !SUBROUTINE
 subroutine READFILE(pathFile, tab, n)
-!READFILE, lit les fichiers et retourne un tableau de donn�es, ainsi que le nombre d'enregistrements
-!   -pathFile :: chemins d'acc�s au fichier
-!   -tab :: tableau d'�l�m�nt retourn� par le fichier
-!   -n :: nombre d'�l�ments contenu dans le tableau
+!READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
+!   -pathFile :: chemins d'acces au fichier
+!   -tab :: tableau d'element retourne par le fichier
+!   -n :: nombre d'elements contenu dans le tableau
 !***********************************************************************************************************!
 !Specification
 
@@ -44,7 +73,7 @@ subroutine READFILE(pathFile, tab, n)
 !***********************************************************************************************************!
 !Body
     allocate(tab(n,3))
-    !V�rification de l'existence du fichier
+    !Verification de l'existence du fichier
     inquire(file=pathFile,exist= exist)
     if (.NOT. exist) then
         print *, "Erreur! Fichier non existant"
@@ -53,13 +82,13 @@ subroutine READFILE(pathFile, tab, n)
 
     !Ouverture du fichier
     open(10, file=pathFile)
-    !Lecture du fichier sur n lignes (on les a r�cup�r� avec NUMRECORD
+    !Lecture du fichier sur n lignes (on les a recupere avec NUMRECORD
     do i = 1, n
         read(10,1000,iostat=io)str
         !Test de fin de fichier
         if(io < 0) exit
         sep = ";"
-        !R�cup�ration des �l�ments contenus dans la cha�ne
+        !Recuperation des elements contenus dans la chaene
         call SPLIT(str, sep, elmt, nelmt)
 
         do j = 1, nelmt
@@ -77,7 +106,7 @@ end subroutine READFILE
 !***********************************************************************************************************!
 !SUBROUTINE
 subroutine NUMRECORD(pathFile, n)
-!READFILE, lit les fichiers et retourne un tableau de donn�es, ainsi que le nombre d'enregistrements
+!READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
 
 !***********************************************************************************************************!
 !Specification
@@ -119,11 +148,11 @@ end subroutine NUMRECORD
 !-----------------------------
 !SUBROUTINE
 subroutine SPLIT(str, sep, T, n)
-!SPLIT, ce charge de s�parer une ligne du fichier en �l�ment indic�.
-!   -str :: la cha�ne de caract�re � traiter
-!   -sep :: le s�parateur d'�l�ments
-!   - T :: le tableau d'�l�ment qui sera retourn�. La taille peut-�tre variable (XY ou XYZ, etc.)
-!   - n :: le nombred'�l�ment dans le tabeau.
+!SPLIT, ce charge de separer une ligne du fichier en element indice.
+!   -str :: la chaene de caractere e traiter
+!   -sep :: le separateur d'elements
+!   - T :: le tableau d'element qui sera retourne. La taille peut-etre variable (XY ou XYZ, etc.)
+!   - n :: le nombred'element dans le tabeau.
 
 !-----------------------------
 !Specification
@@ -145,13 +174,13 @@ subroutine SPLIT(str, sep, T, n)
         pos2 = index( str(pos1:len_trim(str)),sep)
         if (pos2 == 0) then
             n = n + 1
-            !Convertir la cha�ne de caract�re en entier
+            !Convertir la chaine de caractere en entier
             read(str(pos1:), *) val
             T(n) = val
             exit
         end if
         n = n + 1
-        !Convertir la cha�ne de caract�re en entier
+        !Convertir la chaine de caractere en entier
         read(str(pos1:pos1 + pos2 - 2), *) val
         T(n) = val
         pos1 = pos1 + pos2
@@ -159,7 +188,7 @@ subroutine SPLIT(str, sep, T, n)
 
 end subroutine SPLIT
 
-end module access_data
+end module lire_donnees
 
 !-----------------------------
 !PROGRAM
@@ -167,25 +196,39 @@ end module access_data
 program MAIN
 !This program read the SIF and SXY file of a Graph
 !-----------------------------
-use access_data
+use tables_de_graphe
+use lire_donnees
 !Declaration
     implicit none
     character(200)          ::path
-    integer,allocatable, dimension(:,:)      ::tab
-    integer                 ::n
+    integer                 ::i,j
 !-----------------------------
 
 !-----------------------------
 !Body
     path = "E:\Python\graphe\SIFF.txt"
-    print *, "SUBROUTINE NUMRECORD"
-    call NUMRECORD(path, n)
-    print *, "Nombre de ligne dans le fichier ", n
-    !allocate(tab(n,n,n))
 
+    !Obtenir NA
+    print *, "SUBROUTINE NUMRECORD"
+    call NUMRECORD(path, NA)
+    print *, "Nombre de ligne dans le fichier ", NA
+
+    !Allocation de la table SIF
+    allocate(SIF(2,NA))
+
+    !Obtenir la table SIF
     print *, "appel de la subroutine READFILE"
-    call READFILE(path, tab, n)
+    call READFILE(path, SIF, NA)
     print *, "Fin de l'appel de subroutine"
+
+    !Affichage de la table SIF
+    do i = 1, NA
+        print *, "Arc:"
+        do j = 1, 2
+            print *, SIF(i,j)
+        end do
+        print *, ""
+    end do
 
 end program MAIN
 !-----------------------------
