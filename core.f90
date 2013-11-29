@@ -34,7 +34,7 @@ end module tables_de_graphe
 !***********************************************************************************************************!
 !***********************************************************************************************************!
 !***********************************************************************************************************!
-!MODULE ACCESS_DATA
+!MODULE LIRE_DONNEES
 !Ce module contient les fonctions necessaires pour recuperer les donnees stockees dans les tables:
 !SIF, SXY, PAXY
 !   -NUMRECORD, retourne le nombre d'enregistrements des differents fichiers
@@ -190,6 +190,431 @@ end subroutine SPLIT
 
 end module lire_donnees
 
+
+
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!MODULE TOPOLOGIE
+! ce module contient les procedures de base operant sur la topologie d'un graphe :
+!   - ESS , entrants et sortants d'un sommet
+!   - PSS , predecesseurs et successeursq d'un sommet
+!   - PSA , predecesseurs et successeurs d'un arc
+!   - DIRETRO , arcs directs et retrogrades d'un domaine
+!   - ADJ , arcs adjacents a un domaine
+!   - PERIPH, sommets peripheriques d'un domaine
+!   - ENTOUR, domaines entourant un sommet
+!       ces deux derniers modules utilisent la procedure
+!       PERI_ENTOUR , donnant :
+!             -soit les sommets peripheriques d'un domaine
+!             -soit les domaines entourant un sommet
+!   - OPP , domaines opposes par un sommet a un domaine
+!***********************************************************************************************************!
+module topologie
+
+!***********************************************************************************************************!
+!Declaration
+   use tables_de_graphe
+                                    !
+implicit none                                                 !
+                private PERI_ENTOUR                           !
+                                                              !
+   contains                                                   !
+                                                              !
+   !===========================================================
+   subroutine ESS (s,  TA, nta, k )                           !
+   !----------------------------------------------------------!
+   !    donne pour un sommet s, dans un vecteur TA,           !
+   !    de cardinalité nta, la liste des arcs :               !
+   !       -sortant de s, pour k=1                            !
+   !       -entrant dans s, pour k=2                          !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)                   :: s             !
+      integer, intent (out),dimension (1:10) :: TA            !
+      integer, intent (out)                  :: nta           !
+      integer, intent (in)                   :: k             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer ::  i                                           !
+   !----------------------------------------------------------!
+   !                           corps                          !
+     nta = 0                                                  !
+      do i = 1, NA                                            !
+         if ( SIF(i,k) /= s ) then                            !
+             cycle                                            !
+         else                                                 !
+         endif                                                !
+         nta = nta + 1 ; TA (nta)= i                          !
+      enddo !--i--                                            !
+   !----------------------------------------------------------!
+   end subroutine !--ESS--                                    !
+   !===========================================================
+
+   !===========================================================
+   subroutine PSS (s, TS, nts, k )                            !
+   !----------------------------------------------------------!
+   !   donne pour le sommet s, dans un vecteur TS,            !
+   !   de cardinalité nts, la liste :                         !
+   !      -des sommets successeurs, pour k=1                  !
+   !      -des sommets prédécesseurs, pour k=2                !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)                   :: s                 !
+      integer, intent (out),dimension (1:10) :: TS            !
+      integer, intent (out)                  :: nts           !
+      integer, intent (in)                   :: k             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer ::  i, j                                        !
+   !----------------------------------------------------------!
+   !                           corps                          !
+    nts = 0                                                   !
+    bou: do i = 1, NA ;                                       !
+           if ( SIF(i,k) /= s ) then                          !
+              cycle                                           !
+           else                                               !
+           endif                                              !
+           if ( nts /= 0 ) then                               !
+              do j = 1 , nts                                  !
+                 if ( TS(j) == SIF(i,3-k)) then               !
+                    cycle bou                                 !
+                 else                                         !
+                 endif                                        !
+              enddo !--j--                                    !
+           else                                               !
+           endif                                              !
+                                                              !
+           nts = nts + 1 ; TS(nts)=SIF(i, 3-k)                !
+         enddo bou !--i--                                     !
+   !----------------------------------------------------------!
+   end subroutine !--PSS--                                    !
+   !===========================================================
+
+   !===========================================================
+   subroutine PSA (a, TA, nta, k )                            !
+   !----------------------------------------------------------!
+   !   donne pour l'arc a, dans une vecteur TA,               !
+   !   de cardinalité nta, la liste des arcs :                !
+   !       -les successeurs de a, lorsque k=1                 !
+   !       -les predecesseurs de a, lorsque k=2               !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)                   :: a             !
+      integer, intent (out),dimension (1:10) :: TA            !
+      integer, intent (out)                  :: nta           !
+      integer, intent (in)                   :: k             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer ::  i                                           !
+   !----------------------------------------------------------!
+   !                           corps                          !
+     nta = 0                                                  !
+      do i = 1, NA                                            !
+         if ( SIF(i,3-k) /= SIF(a,k) ) then                   !
+             cycle                                            !
+         else                                                 !
+         endif                                                !
+         nta = nta + 1 ; TA (nta)= i                          !
+      enddo !--i--                                            !
+   !----------------------------------------------------------!
+   end subroutine !--PSA--                                    !
+   !===========================================================
+
+   !===========================================================
+   subroutine DIRETRO ( d , TA, nta, k )                      !
+   !----------------------------------------------------------!
+   !   donne pour le domaine d , dans le vecteur TA,          !
+   !   de cardinalité nta,                                    !
+   !      -les arcs directs, lorsque k=1                      !
+   !      -les arcs rétrogrades, lorsque k=2                  !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)                   :: d             !
+      integer, intent (out),dimension (1:10) :: TA            !
+      integer, intent (out)                  :: nta           !
+      integer, intent (in)                   :: k             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer ::  i                                           !
+   !----------------------------------------------------------!
+   !                           corps                          !
+     nta = 0                                                  !
+      do i = 1, NA                                            !
+         if ( GD(i,k) /= d ) then                             !
+             cycle                                            !
+         else                                                 !
+         endif                                                !
+         nta = nta + 1 ; TA (nta)= i                          !
+      enddo !--i--                                            !
+   !----------------------------------------------------------!
+   end subroutine !--DIRETRO--                                !
+   !===========================================================
+
+   !===========================================================
+   subroutine ADJ (d, TD, ntd )                               !
+   !----------------------------------------------------------!
+   !   donne pour le domaine d , dans le vecteur TD,          !
+   !   de cardinalité ntd,les domaines adjacents à d.         !                           !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)                   :: d             !
+      integer, intent (out),dimension (1:10) :: TD            !
+      integer, intent (out)                  :: ntd           !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer ::  i, j, k                                     !
+   !----------------------------------------------------------!
+   !                           corps                          !
+     ntd = 0                                                  !
+     do i = 1, NA                                             !
+       bou: do j = 1, 2                                       !
+               if ( GD(i,j) /= d ) then                       !
+                  cycle                                       !
+               else                                           !
+               endif                                          !
+               if ( ntd /= 0 ) then                           !
+                  do k = 1, ntd                               !
+                     if (TD(k) == GD(i, 3-j) ) then           !
+                        cycle bou    ! next 2                 !
+                     else                                     !
+                     endif                                    !
+                  enddo !--k--                                !
+               else                                           !
+               endif                                          !
+               ntd = ntd + 1 ; TD (ntd)= GD(i, 3-j)           !
+            enddo bou  !--j--                                 !
+       enddo !--i--                                           !
+   !----------------------------------------------------------!
+   end subroutine ADJ                                         !
+   !===========================================================
+
+   !===========================================================
+   subroutine PERIPH (d, T, nt )                              !
+   !----------------------------------------------------------!
+   ! donne dans le vecteur T, de cardinalite nt, la liste des !
+   ! sommets peripheriques du domaine d                       !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+     integer, intent (in)                   :: d              !
+     integer, intent (out),dimension(1:10)  :: T              !
+     integer, intent (out)                  :: nt             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+   !----------------------------------------------------------!
+   !                          externes                        !
+!     interface                                               !
+       !.................................................     !
+!      subroutine PERI_ENTOUR (c, A, B, T, nt )               !
+!         integer, intent (in)                   :: c         !
+!         integer, intent (in), dimension(:,:)   :: A,B       !
+!         integer, intent (out),dimension(1:10)  :: T         !
+!         integer, intent (out)                  :: nt        !
+!      end subroutine ! -- PERI_ENTOUR --                     !
+       !..................................................    !
+!    end interface                                            !
+   !----------------------------------------------------------!
+   !                           corps                          !
+        call PERI_ENTOUR (d, GD, SIF, T, nt )                 !
+   !----------------------------------------------------------!
+   end subroutine ! -- PERIPH --                              !
+   !===========================================================
+
+   !===========================================================
+   subroutine ENTOUR (s, T, nt )                              !
+   !----------------------------------------------------------!
+   ! donne dans le vecteur T, de cardinalite nt, la liste des !
+   ! domaines entourant le sommet s                           !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+     integer, intent (in)                   :: s              !
+     integer, intent (out),dimension(1:10)  :: T              !
+     integer, intent (out)                  :: nt             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+   !----------------------------------------------------------!
+   !                          externes                        !
+!     interface                                               !
+       !.................................................     !
+!      subroutine PERI_ENTOUR (c, A, B, T, nt )               !
+!         integer, intent (in)                   :: c         !
+!         integer, intent (in), dimension(:,:)   :: A,B       !
+!         integer, intent (out),dimension(1:10)  :: T         !
+!          integer, intent (out)                 :: nt        !
+!      end subroutine ! -- PERI_ENTOUR --                     !
+       !..................................................    !
+!    end interface                                            !
+   !----------------------------------------------------------!
+   !                           corps                          !
+        call PERI_ENTOUR (s, SIF, GD, T, nt )                 !
+   !----------------------------------------------------------!
+   end subroutine !-- ENTOUR --                               !
+   !===========================================================
+
+   !===========================================================
+   subroutine PERI_ENTOUR (c, A, B, T, nt )                   !
+   !----------------------------------------------------------!
+   !  donne pour le composant c, un vecteur de cardinalite nt.!
+   !    - c : domaine, T contient les sommets peripheriques   !
+   !    - c : sommet, T contient les domaines entourants.     !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+     integer, intent (in)                   :: c              !
+     integer, intent (in), dimension(:,:)   :: A,B            !
+     integer, intent (out),dimension(1:10)  :: T              !
+     integer, intent (out)                  :: nt             !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer    :: i, j, k, h                                !
+   !----------------------------------------------------------!
+      nt = 0                                                  !
+      do i = 1, NA                                            !
+         do j = 1, 2                                          !
+            if ( A(i,j) /= c ) then                           !
+               cycle                                          !
+            else                                              !
+            endif                                             !
+            bou : do k = 1, 2                                 !
+                     if ( nt /= 0 ) then                      !
+                        do h = 1, nt                          !
+                           if ( T(h) == B(i,k) ) then         !
+                               cycle bou       ! next 2       !
+                           else                               !
+                           endif                              !
+                        enddo  !--h-- ;                       !
+                     else                                     !
+                     endif                                    !
+                     nt = nt + 1 ; T(nt) = B(i,k)             !
+                   enddo bou  !--k--                          !
+          enddo !--j--                                        !
+      enddo !--i--                                            !
+   !----------------------------------------------------------!
+   end subroutine ! -- PERI_ENTOUR --                         !
+   !===========================================================
+
+   !===========================================================
+   subroutine OPP (d, T, nt )                                 !
+   !----------------------------------------------------------!
+   !   donne pour le domaine d , dans le vecteur T ,          !
+   !   de cardinalité nt ,les domaines opposes à d.           !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)                   :: d             !
+      integer, intent (out),dimension (1:10) :: T             !
+      integer, intent (out)                  :: nt            !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer                    :: nl,i,j,k,h,a,s,dd         !
+      integer, dimension (1:100) ::  L                        !
+   !----------------------------------------------------------!
+   !                           corps                          !
+     nt  = 0                                                  !
+     do i = 1, NA                                             !
+       do j = 1, 2                                            !
+         if ( GD(i,j) /= d ) then                             !
+            cycle                                             !
+         else                                                 !
+         endif                                                !
+         nt = nt + 1 ; T(nt) = i                              !
+       enddo !--j--                                           !
+     enddo !--i--                                             !
+                                                              !
+   ! on obtient ici tous les arcs, directs ou retrogrades,    !
+   ! entourant le domaine d, et ceci sans duplicata           !
+     nl = 0                                                   !
+     do i = 1, nt                                             !
+        a = T (i)                                             !
+        bou_1 : do j = 1, 2 ;                                 !
+                   if ( nl /= 0 ) then                        !
+                      do  k = 1, nl                           !
+                         if ( L(k) == SIF(a,j) ) then         !
+                             cycle bou_1                      !
+                         else                                 !
+                         endif                                !
+                      enddo !--k--                            !
+                   else                                       !
+                   endif                                      !
+                   nl = nl + 1 ; L (nl) =  SIF (a, j)         !
+                 enddo bou_1  !--j--                          !
+      enddo !--i--                                            !
+                                                              !
+    ! on a  les sommets peripheriques de d sans duplicata     !
+                                                              !
+      nt = 0 ;                                                !
+      do i = 1 , nl                                           !
+         s = L(i)                                             !
+         do j = 1, NA                                         !
+           bou_2 : do k = 1, 2                                !
+                     if ( SIF(j,k) /= s ) then                !
+                         cycle                                !
+                     else                                     !
+                     endif                                    !
+                     if ( nt /= 0 ) then                      !
+                        do h = 1, nt ;                        !
+                           if ( T(h) == j ) then              !
+                              cycle bou_2                     !
+                           else                               !
+                           endif                              !
+                        enddo !--h--                          !
+                     else                                     !
+                     endif                                    !
+                     nt = nt + 1 ; T(nt) = j                  !
+                    enddo bou_2   !--k--                      !
+          enddo !--j--                                        !
+      enddo !--i--                                            !
+                                                              !
+    ! on a tous les arcs entrants et sortants sans duplicata  !
+                                                              !
+      nl = 0                                                  !
+      do i = 1, nt                                            !
+         a = T(i)                                             !
+         bou_3 : do j = 1,2                                   !
+                    if ( nl /= 0 ) then                       !
+                       do k = 1, nl                           !
+                          if ( L(k) == GD(a,j) ) then         !
+                             cycle  bou_3                     !
+                          else                                !
+                          endif                               !
+                       enddo !--k--                           !
+                     else                                     !
+                     endif                                    !
+                     nl = nl + 1 ; L(nl) = GD (a,j)           !
+                  enddo  bou_3  !--j--                        !
+       enddo !--i--                                           !
+                                                              !
+    !  on a a tous les domaines concernant d,sans duplicata,  !
+    !  c'est a dire : - les domaines adjacents a d,           !
+    !                 - d lui-meme,                           !
+    !                 - ses eventuels opposes.                !
+                                                              !
+      nt = 0                                                  !
+      bou_4: do i = 1, nl                                     !
+                dd = L(i)                                     !
+                if ( dd == d ) then                           !
+                    cycle     !-- c'est d lui-meme --         !
+                else                                          !
+                endif                                         !
+                do j = 1, NA                                  !
+                  if( GD(i,1) == d .AND. GD(i,2) == dd .OR.&  !
+                    & GD(i,1) == dd .AND. GD(i,2) == d ) then !
+                     cycle  bou_4   !-- dd est adjacent a d --!
+                  else                                        !
+                  endif                                       !
+                enddo !--j--                                  !
+                             !-- donc dd est un oppose a d -- !
+                nt = nt + 1 ; T(nt) = dd                      !
+             enddo  bou_4  !--i--                             !
+   !----------------------------------------------------------!
+   end subroutine OPP                                         !
+   !===========================================================
+                                                              !
+!-------------------------------------------------------------!
+end module topologie                                          !
+!MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+
+
+
+
 !-----------------------------
 !PROGRAM
 
@@ -206,7 +631,7 @@ use lire_donnees
 
 !-----------------------------
 !Body
-    path = "E:\Python\graphe\SIFF.txt"
+    path = "./data/SIF.txt"
 
     !Obtenir NA
     print *, "SUBROUTINE NUMRECORD"
