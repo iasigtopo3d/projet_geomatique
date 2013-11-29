@@ -2,11 +2,11 @@
 !***********************************************************************************************************!
 !***********************************************************************************************************!
 !MODULE ACCESS_DATA
-!Ce module contient les fonctions nécessaires pour récupérer les données stockées dans les tables:
+!Ce module contient les fonctions nï¿½cessaires pour rï¿½cupï¿½rer les donnï¿½es stockï¿½es dans les tables:
 !SIF, SXY, PAXY
-!   -NUMRECORD, retourne le nombre d'enregistrements des différents fichiers
-!   -READFILE, lit les fichiers et retourne un tableau de données, ainsi que le nombre d'enregistrements
-!   -SPLIT, ce charge de séparer une ligne du fichier en élément indicé.
+!   -NUMRECORD, retourne le nombre d'enregistrements des diffï¿½rents fichiers
+!   -READFILE, lit les fichiers et retourne un tableau de donnï¿½es, ainsi que le nombre d'enregistrements
+!   -SPLIT, ce charge de sï¿½parer une ligne du fichier en ï¿½lï¿½ment indicï¿½.
 !***********************************************************************************************************!
 
 module access_data
@@ -18,10 +18,10 @@ contains
 !***********************************************************************************************************!
 !SUBROUTINE
 subroutine READFILE(pathFile, tab, n)
-!READFILE, lit les fichiers et retourne un tableau de données, ainsi que le nombre d'enregistrements
-!   -pathFile :: chemins d'accès au fichier
-!   -tab :: tableau d'élémént retourné par le fichier
-!   -n :: nombre d'éléments contenu dans le tableau
+!READFILE, lit les fichiers et retourne un tableau de donnï¿½es, ainsi que le nombre d'enregistrements
+!   -pathFile :: chemins d'accï¿½s au fichier
+!   -tab :: tableau d'ï¿½lï¿½mï¿½nt retournï¿½ par le fichier
+!   -n :: nombre d'ï¿½lï¿½ments contenu dans le tableau
 !***********************************************************************************************************!
 !Specification
 
@@ -40,7 +40,7 @@ subroutine READFILE(pathFile, tab, n)
 !***********************************************************************************************************!
 !Body
     allocate(tab(n,3))
-    !Vérification de l'existence du fichier
+    !Vï¿½rification de l'existence du fichier
     inquire(file=pathFile,exist= exist)
     if (.NOT. exist) then
         print *, "Erreur! Fichier non existant"
@@ -49,13 +49,13 @@ subroutine READFILE(pathFile, tab, n)
 
     !Ouverture du fichier
     open(10, file=pathFile)
-    !Lecture du fichier sur n lignes (on les a récupéré avec NUMRECORD
+    !Lecture du fichier sur n lignes (on les a rï¿½cupï¿½rï¿½ avec NUMRECORD
     do i = 1, n
         read(10,1000,iostat=io)str
         !Test de fin de fichier
         if(io < 0) exit
         sep = ";"
-        !Récupération des éléments contenus dans la chaîne
+        !Rï¿½cupï¿½ration des ï¿½lï¿½ments contenus dans la chaï¿½ne
         call SPLIT(str, sep, elmt, nelmt)
 
         do j = 1, nelmt
@@ -73,7 +73,7 @@ end subroutine READFILE
 !***********************************************************************************************************!
 !SUBROUTINE
 subroutine NUMRECORD(pathFile, n)
-!READFILE, lit les fichiers et retourne un tableau de données, ainsi que le nombre d'enregistrements
+!READFILE, lit les fichiers et retourne un tableau de donnï¿½es, ainsi que le nombre d'enregistrements
 
 !***********************************************************************************************************!
 !Specification
@@ -115,11 +115,11 @@ end subroutine NUMRECORD
 !-----------------------------
 !SUBROUTINE
 subroutine SPLIT(str, sep, T, n)
-!SPLIT, ce charge de séparer une ligne du fichier en élément indicé.
-!   -str :: la chaîne de caractère à traiter
-!   -sep :: le séparateur d'éléments
-!   - T :: le tableau d'élément qui sera retourné. La taille peut-être variable (XY ou XYZ, etc.)
-!   - n :: le nombred'élément dans le tabeau.
+!SPLIT, ce charge de sï¿½parer une ligne du fichier en ï¿½lï¿½ment indicï¿½.
+!   -str :: la chaï¿½ne de caractï¿½re ï¿½ traiter
+!   -sep :: le sï¿½parateur d'ï¿½lï¿½ments
+!   - T :: le tableau d'ï¿½lï¿½ment qui sera retournï¿½. La taille peut-ï¿½tre variable (XY ou XYZ, etc.)
+!   - n :: le nombred'ï¿½lï¿½ment dans le tabeau.
 
 !-----------------------------
 !Specification
@@ -141,13 +141,13 @@ subroutine SPLIT(str, sep, T, n)
         pos2 = index( str(pos1:len_trim(str)),sep)
         if (pos2 == 0) then
             n = n + 1
-            !Convertir la chaîne de caractère en entier
+            !Convertir la chaï¿½ne de caractï¿½re en entier
             read(str(pos1:), *) val
             T(n) = val
             exit
         end if
         n = n + 1
-        !Convertir la chaîne de caractère en entier
+        !Convertir la chaï¿½ne de caractï¿½re en entier
         read(str(pos1:pos1 + pos2 - 2), *) val
         T(n) = val
         pos1 = pos1 + pos2
@@ -174,13 +174,13 @@ use access_data
 !-----------------------------
 !Body
     path = "E:\Python\graphe\SIFF.txt"
-    print *, "SUBROUTINE NUMRECORD",
+    print *, "SUBROUTINE NUMRECORD"
     call NUMRECORD(path, n)
     print *, "Nombre de ligne dans le fichier ", n
     !allocate(tab(n,n,n))
 
     print *, "appel de la subroutine READFILE"
-    call READFILE(pathUncleaned, tab, n)
+    call READFILE(path, tab, n)
     print *, "Fin de l'appel de subroutine"
 
 end program MAIN
