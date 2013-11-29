@@ -17,7 +17,7 @@
 
 module tables_de_graphe
 
-implicit none ;
+implicit none
 
 !***********************************************************************************************************!
 !Declaration
@@ -47,146 +47,146 @@ module lire_donnees
 implicit none
 contains
 
-!***********************************************************************************************************!
-!***********************************************************************************************************!
-!SUBROUTINE
-subroutine READFILE(pathFile, tab, n)
-!READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
-!   -pathFile :: chemins d'acces au fichier
-!   -tab :: tableau d'element retourne par le fichier
-!   -n :: nombre d'elements contenu dans le tableau
-!***********************************************************************************************************!
-!Specification
+    !***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !SUBROUTINE
+    subroutine READFILE(pathFile, tab, n)
+    !READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
+    !   -pathFile :: chemins d'acces au fichier
+    !   -tab :: tableau d'element retourne par le fichier
+    !   -n :: nombre d'elements contenu dans le tableau
+    !***********************************************************************************************************!
+    !Specification
 
-    character(200), intent(in)      ::pathFile
-    integer,  intent(out),allocatable, dimension(:,:)      ::tab
-    integer, intent(in)             ::n
+        character(200), intent(in)      ::pathFile
+        integer,  intent(out),allocatable, dimension(:,:)      ::tab
+        integer, intent(in)             ::n
 
-!***********************************************************************************************************!
-!Declaration
-    logical                         ::exist
-    integer                         ::io,  i, j, nelmt
-    character(20)                   ::str
-    character(1)                    ::sep
-    integer, dimension(3)           ::elmt
+    !***********************************************************************************************************!
+    !Declaration
+        logical                         ::exist
+        integer                         ::io,  i, j, nelmt
+        character(20)                   ::str
+        character(1)                    ::sep
+        integer, dimension(3)           ::elmt
 
-!***********************************************************************************************************!
-!Body
-    allocate(tab(n,3))
-    !Verification de l'existence du fichier
-    inquire(file=pathFile,exist= exist)
-    if (.NOT. exist) then
-        print *, "Erreur! Fichier non existant"
-        return
-    endif
+    !***********************************************************************************************************!
+    !Body
+        allocate(tab(n,3))
+        !Verification de l'existence du fichier
+        inquire(file=pathFile,exist= exist)
+        if (.NOT. exist) then
+            print *, "Erreur! Fichier non existant"
+            return
+        endif
 
-    !Ouverture du fichier
-    open(10, file=pathFile)
-    !Lecture du fichier sur n lignes (on les a recupere avec NUMRECORD
-    do i = 1, n
-        read(10,1000,iostat=io)str
-        !Test de fin de fichier
-        if(io < 0) exit
-        sep = ";"
-        !Recuperation des elements contenus dans la chaene
-        call SPLIT(str, sep, elmt, nelmt)
+        !Ouverture du fichier
+        open(10, file=pathFile)
+        !Lecture du fichier sur n lignes (on les a recupere avec NUMRECORD
+        do i = 1, n
+            read(10,1000,iostat=io)str
+            !Test de fin de fichier
+            if(io < 0) exit
+            sep = ";"
+            !Recuperation des elements contenus dans la chaene
+            call SPLIT(str, sep, elmt, nelmt)
 
-        do j = 1, nelmt
-            tab(i,j) = elmt(j)
-            end do
-    enddo
-    !Fermeture du fichier
-    close(10)
+            do j = 1, nelmt
+                tab(i,j) = elmt(j)
+                end do
+        enddo
+        !Fermeture du fichier
+        close(10)
 
-deallocate (tab)
-1000 FORMAT(a10)
-end subroutine READFILE
+    deallocate (tab)
+    1000 FORMAT(a10)
+    end subroutine READFILE
 
-!***********************************************************************************************************!
-!***********************************************************************************************************!
-!SUBROUTINE
-subroutine NUMRECORD(pathFile, n)
-!READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
+    !***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !SUBROUTINE
+    subroutine NUMRECORD(pathFile, n)
+    !READFILE, lit les fichiers et retourne un tableau de donnees, ainsi que le nombre d'enregistrements
 
-!***********************************************************************************************************!
-!Specification
+    !***********************************************************************************************************!
+    !Specification
 
-    character(200), intent(in)      ::pathFile
-    integer, intent(out)            ::n
+        character(200), intent(in)      ::pathFile
+        integer, intent(out)            ::n
 
-!***********************************************************************************************************!
-!Declaration
-    logical                         ::exist
-    integer                         ::io
+    !***********************************************************************************************************!
+    !Declaration
+        logical                         ::exist
+        integer                         ::io
 
-    n = 0
-!***********************************************************************************************************!
-!Body
-    inquire(file=pathFile,exist= exist)
-    if (.NOT. exist) then
-        print *, "Erreur! Fichier non existant"
-        return
-    endif
+        n = 0
+    !***********************************************************************************************************!
+    !Body
+        inquire(file=pathFile,exist= exist)
+        if (.NOT. exist) then
+            print *, "Erreur! Fichier non existant"
+            return
+        endif
 
-    !Ouverture du fichier
-    open(10, file=pathFile)
-    !Lecture du fichier
-    do
-        read(10,*,iostat=io)
-        !Test si fin du fichier
-        if(io < 0) exit
-        n = n + 1
+        !Ouverture du fichier
+        open(10, file=pathFile)
+        !Lecture du fichier
+        do
+            read(10,*,iostat=io)
+            !Test si fin du fichier
+            if(io < 0) exit
+            n = n + 1
 
-    enddo
-    !Fermeture du fichier
-    close(10)
+        enddo
+        !Fermeture du fichier
+        close(10)
 
-end subroutine NUMRECORD
+    end subroutine NUMRECORD
 
 
-!***********************************************************************************************************!
-!-----------------------------
-!SUBROUTINE
-subroutine SPLIT(str, sep, T, n)
-!SPLIT, ce charge de separer une ligne du fichier en element indice.
-!   -str :: la chaene de caractere e traiter
-!   -sep :: le separateur d'elements
-!   - T :: le tableau d'element qui sera retourne. La taille peut-etre variable (XY ou XYZ, etc.)
-!   - n :: le nombred'element dans le tabeau.
+    !***********************************************************************************************************!
+    !-----------------------------
+    !SUBROUTINE
+    subroutine SPLIT(str, sep, T, n)
+    !SPLIT, ce charge de separer une ligne du fichier en element indice.
+    !   -str :: la chaene de caractere e traiter
+    !   -sep :: le separateur d'elements
+    !   - T :: le tableau d'element qui sera retourne. La taille peut-etre variable (XY ou XYZ, etc.)
+    !   - n :: le nombred'element dans le tabeau.
 
-!-----------------------------
-!Specification
-    character(20), intent(in)       ::str
-    character(1), intent(in)       ::sep
-    integer, dimension(:), intent(out) ::T
-    integer, intent(out)            ::n
+    !-----------------------------
+    !Specification
+        character(20), intent(in)       ::str
+        character(1), intent(in)       ::sep
+        integer, dimension(:), intent(out) ::T
+        integer, intent(out)            ::n
 
-!-----------------------------
-!Declaration
-    integer             :: pos1, pos2, val
+    !-----------------------------
+    !Declaration
+        integer             :: pos1, pos2, val
 
-!-----------------------------
-!Body
-    pos1 = 1
-    n = 0
+    !-----------------------------
+    !Body
+        pos1 = 1
+        n = 0
 
-   do
-        pos2 = index( str(pos1:len_trim(str)),sep)
-        if (pos2 == 0) then
+       do
+            pos2 = index( str(pos1:len_trim(str)),sep)
+            if (pos2 == 0) then
+                n = n + 1
+                !Convertir la chaine de caractere en entier
+                read(str(pos1:), *) val
+                T(n) = val
+                exit
+            end if
             n = n + 1
             !Convertir la chaine de caractere en entier
-            read(str(pos1:), *) val
+            read(str(pos1:pos1 + pos2 - 2), *) val
             T(n) = val
-            exit
-        end if
-        n = n + 1
-        !Convertir la chaine de caractere en entier
-        read(str(pos1:pos1 + pos2 - 2), *) val
-        T(n) = val
-        pos1 = pos1 + pos2
-    end do
+            pos1 = pos1 + pos2
+        end do
 
-end subroutine SPLIT
+    end subroutine SPLIT
 
 end module lire_donnees
 
@@ -214,10 +214,10 @@ module topologie
 
 !***********************************************************************************************************!
 !Declaration
-   use tables_de_graphe
-                                    !
-implicit none                                                 !
-                private PERI_ENTOUR                           !
+use tables_de_graphe
+
+implicit none
+           private PERI_ENTOUR
                                                               !
    contains                                                   !
                                                               !
@@ -261,7 +261,7 @@ implicit none                                                 !
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: s                 !
-      integer, intent (out),dimension (1:10) :: TS            !
+      integer, intent (out),dimension (1:NA) :: TS            !
       integer, intent (out)                  :: nts           !
       integer, intent (in)                   :: k             !
    !----------------------------------------------------------!
@@ -623,10 +623,15 @@ program MAIN
 !-----------------------------
 use tables_de_graphe
 use lire_donnees
+use topologie
+
 !Declaration
     implicit none
     character(200)          ::path
     integer                 ::i,j
+    !Variables pour PSS
+    integer, allocatable, dimension (:) :: TPSS            !
+    integer                :: npss
 !-----------------------------
 
 !-----------------------------
@@ -653,6 +658,13 @@ use lire_donnees
             print *, SIF(i,j)
         end do
         print *, ""
+    end do
+
+    allocate(TPSS(NA))
+    call PSS (2, TPSS, npss, 1 )
+    print *, "PSS"
+    do i = 1, npss
+        print *, TPSS(i)
     end do
 
 end program MAIN
