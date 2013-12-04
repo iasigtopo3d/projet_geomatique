@@ -23,7 +23,12 @@ implicit none
 !Declaration
    integer                               :: NA, NS, ND,NAXY
    integer, dimension (:,:), allocatable :: SIF, GD
+   !REM: SIF, SXY, etc ne doivent jamais être triées de quelques façon que ce soit
    integer, dimension (:,:), allocatable :: SXY, AXY, PAXY
+   !addition PFO
+   !Declaration Parametres formels pour Module Parcours de Graphe
+   integer, allocatable, dimension (:,:) :: VectorTable
+   real :: pi=3.14159
 
 
 end module tables_de_graphe
@@ -225,7 +230,7 @@ implicit none
    subroutine ESS (s,  TA, nta, k )                           !
    !----------------------------------------------------------!
    !    donne pour un sommet s, dans un vecteur TA,           !
-   !    de cardinalit� nta, la liste des arcs :               !
+   !    de cardinalit� nta, la liste des arcs :               !
    !       -sortant de s, pour k=1                            !
    !       -entrant dans s, pour k=2                          !
    !----------------------------------------------------------!
@@ -255,9 +260,9 @@ implicit none
    subroutine PSS (s, TS, nts, k )                            !
    !----------------------------------------------------------!
    !   donne pour le sommet s, dans un vecteur TS,            !
-   !   de cardinalit� nts, la liste :                         !
+   !   de cardinalit� nts, la liste :                         !
    !      -des sommets successeurs, pour k=1                  !
-   !      -des sommets pr�d�cesseurs, pour k=2                !
+   !      -des sommets pr�d�cesseurs, pour k=2                !
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: s                 !
@@ -295,9 +300,9 @@ implicit none
    subroutine PSA (a, TA, nta, k )                            !
    !----------------------------------------------------------!
    !   donne pour l'arc a, dans une vecteur TA,               !
-   !   de cardinalit� nta, la liste des arcs :                !
-   !       -les successeurs de a, lorsque k=1                 !
-   !       -les predecesseurs de a, lorsque k=2               !
+   !   de cardinalit� nta, la liste des arcs :                !
+   !       -les successeurs de a, lorsque k=2                 !
+   !       -les predecesseurs de a, lorsque k=1               !
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: a             !
@@ -325,9 +330,9 @@ implicit none
    subroutine DIRETRO ( d , TA, nta, k )                      !
    !----------------------------------------------------------!
    !   donne pour le domaine d , dans le vecteur TA,          !
-   !   de cardinalit� nta,                                    !
+   !   de cardinalit� nta,                                    !
    !      -les arcs directs, lorsque k=1                      !
-   !      -les arcs r�trogrades, lorsque k=2                  !
+   !      -les arcs r�trogrades, lorsque k=2                  !
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: d             !
@@ -355,7 +360,7 @@ implicit none
    subroutine ADJ (d, TD, ntd )                               !
    !----------------------------------------------------------!
    !   donne pour le domaine d , dans le vecteur TD,          !
-   !   de cardinalit� ntd,les domaines adjacents � d.         !                           !
+   !   de cardinalit� ntd,les domaines adjacents � d.         !                           !
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: d             !
@@ -496,7 +501,7 @@ implicit none
    subroutine OPP (d, T, nt )                                 !
    !----------------------------------------------------------!
    !   donne pour le domaine d , dans le vecteur T ,          !
-   !   de cardinalit� nt ,les domaines opposes � d.           !
+   !   de cardinalit� nt ,les domaines opposes � d.           !
    !----------------------------------------------------------!
    !                       specifications                     !
       integer, intent (in)                   :: d             !
@@ -615,6 +620,482 @@ end module topologie                                          !
 
 
 
+module metrique
+
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+! ce module contient des tables decrivant la metrique d'un
+! graphe, ainsi que les procedures de base operant sur la
+! metrique de ce graphe :
+!      - LGR_ARC , donne la longueur d'un arc
+!      - PERIM , donne le perimetre d'un domaine
+!      - SURFACE , donne la surface d'un domaine
+! il utilise le module "topologie"
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+
+!***********************************************************************************************************!                                                              !
+   use  topologie                                             !
+   !---------------------                                     !
+implicit none                                                 !
+                   private LGR_SEG                            !
+   contains                                                   !
+                                                              !
+   !===========================================================
+   real function LGR_ARC ( a ) result (lgr)                   !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)  :: a                              !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer   :: i, ini, fin                                !
+      real      :: x1, x2, y1, y2                             !
+   !----------------------------------------------------------!
+   !                         externes                         !
+!   interface                                                 !
+        !.................................................    !
+!       real function LGR_SEG (xi,xf,yi,yf) result (lgse)     !
+!          real, intent (in) :: xi, xf, yi, yf                !
+!       end function !-- LGR_SEG --                           !
+        !.................................................    !
+!   end interface                                             !
+   !----------------------------------------------------------!
+   !                           corps                          !
+      lgr = 0.                                                !
+      ini = SIF (a,1)                                         !
+      x1 = float(SXY(ini,1)) ; y1 = float(SXY (ini,2))        !
+      if ( PAXY(a,1) /= 0) then                               !
+         do  i = PAXY(a,1), PAXY(a,2)                         !
+             x2 = float(AXY(i,1)) ; y2 = float(AXY(i,2))      !
+             lgr = lgr + LGR_SEG( x1, x2, y1, y2 )            !
+             x1 = x2 ; y1 = y2                                !
+         enddo  !--i--                                        !
+      else                                                    !
+      endif ;                                                 !
+      fin = SIF(a,2)                                          !
+      x2 = float(SXY(fin,1)) ; y2 = float(SXY (fin,2))        !
+      lgr = lgr + LGR_SEG( x1, x2, y1, y2 )                   !
+   !----------------------------------------------------------!
+   end function ! -- LGR_ARC --                               !
+   !===========================================================
+
+   !===========================================================
+   real function LGR_SEG (x1,x2,y1,y2) result (lgse)          !
+   !----------------------------------------------------------!
+   !                   specifications                         !
+           real, intent (in) :: x1, x2, y1, y2                !
+   !----------------------------------------------------------!
+   !                    declarations                          !
+       real  :: dx, dy                                        !
+   !----------------------------------------------------------!
+   !                        corps                             !
+      dx = x2 - x1 ; dy = y2 - y1                             !
+      lgse = sqrt( dx * dx + dy * dy )                        !
+   !----------------------------------------------------------!
+   end function !-- LGR_SEG --                                !
+   !===========================================================
+
+   !===========================================================
+   real function PERIMETRE ( d )result (perim)                !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)  :: d                              !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer   :: i, j                                       !
+   !----------------------------------------------------------!
+   !                          externes                        !
+!    interface                                                !
+          !..........................................         !
+!         real function LGR_ARC ( a ) result (lgr)  ;         !
+!              integer, intent (in)  :: a   ;                 !
+!         end function  ! -- LGR_ARC --                       !
+          !..........................................         !
+!    end interface                                            !
+   !----------------------------------------------------------!
+   !                           corps                          !
+          perim = 0.                                          !
+          do i = 1, NA                                        !
+             do j = 1, 2                                      !
+                if ( GD(i,j) /= d ) then                      !
+                   cycle                                      !
+                else                                          !
+                endif                                         !
+                perim = perim + LGR_ARC ( i )                 !
+             enddo ! --j--                                    !
+          enddo ! --i--                                       !
+   !----------------------------------------------------------!
+   end function ! -- PERIMETRE --                             !
+   !===========================================================
+
+   !===========================================================
+   real function SURFACE ( d )result (surf)                   !
+   !----------------------------------------------------------!
+   !                       specifications                     !
+      integer, intent (in)  :: d                              !
+   !----------------------------------------------------------!
+   !                        declarations                      !
+      integer   :: i,j,k,ini,fin                              !
+      real      :: c, x0, y0, x1, y1                          !
+   !----------------------------------------------------------!
+   !                           corps                          !
+      surf = 0.                                               !
+      do i = 1, NA                                            !
+         do j = 1,2                                           !
+            if ( GD(i,j) /= d ) then                          !
+               cycle                                          !
+            else                                              !
+            endif                                             !
+            !--cet arc concerne notre domaine d--             !
+            c = 0.                                            !
+            ini = SIF(i,1)                                    !
+            x0 = float(SXY(ini,1)) ; y0 = float(SXY(ini,2))   !
+            if ( PAXY(i,1) /= 0 ) then                        !
+               do k = PAXY(i,1) , PAXY(i,2)                   !
+                  x1 = float(AXY(k,1)); y1 = float(AXY(k,2))  !
+                  c = c + (x1-x0)*(y1+y0)/2.                  !
+                  x0 = x1 ; y0 = y1                           !
+               enddo !--k--                                   !
+            else                                              !
+            endif                                             !
+            fin = SIF (i,2)                                   !
+            x1 = float(SXY(fin,1)) ; y1 = float(SXY(fin,2))   !
+            c = c + (x1-x0)*(y1+y0)/2.                        !
+            if ( j == 1 ) then                                !
+                surf = surf - c                               !
+            else                                              !
+                surf = surf + c                               !
+            endif                                             !
+         enddo !--j--                                         !
+      enddo !--i--                                            !
+   !----------------------------------------------------------!
+   end function ! -- SURFACE --                               !
+   !===========================================================
+                                                              !
+!-------------------------------------------------------------!                                                               !
+end module metrique                                           !
+!MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+
+
+module metrique_vectorielle
+
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!A REMPLIR!!!!!!!!!!!
+! ce module contient des subroutine permettant des opérations vectorielle sur les TABLES
+! sur vecteurs decrivant la metrique d'un
+! graphe, ainsi que les procedures de base operant sur la
+! metrique de ce graphe :
+!     -
+!     -
+!     -
+!
+! il utilise le module "??????"
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+    use metrique                                            !
+   !---------------------
+end module metrique_vectorielle
+
+
+
+
+module parcours_graphe
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+! ce module contient des routines et fonctions implementées par le groupe pour parcourir le graphe
+! graphe, ainsi que les procedures de base operant sur la
+! metrique de ce graphe :
+!     OK - getVectorTable (cf getVectorCoordinates invector.py), calcul des vecteurs a partir de la Table SIF et SXY
+!      - getVectorDeterminant , calcul determinant
+!     OK - getNorme , calcule norme d'un vecteur
+!      - getProduitScalaire , calcul de produit scalaire
+!      - getLeftArc, retourne l'arc le plus à gauche (????A EXPLICITER????)
+!
+! il utilise le module ????"Lire Donnée???"
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+    use metrique_vectorielle                                             !
+   !---------------------
+implicit none
+
+contains
+
+
+
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !SUBROUTINE
+    subroutine GetVectorTable(VectorTab)
+    !GetVectorTable Consomme SIF et SXYZ, retourne VectorTable
+    !   -SIF :: from Table_de_graphe
+    !   -SXY :: from Table_de_graphe
+    !***********************************************************************************************************!
+    !Specification
+
+        integer,  intent(out),allocatable, dimension(:,:) :: VectorTab
+
+
+    !***********************************************************************************************************!
+    !Declaration
+        !logical                         ::exist
+        integer                         ::i, j
+        integer                         ::SommetFinal, SommetInitial
+        !character(20)                   ::str
+        !character(1)                    ::sep
+        !integer, dimension(3)           ::elmt
+
+    !***********************************************************************************************************!
+    !Body
+
+    allocate (VectorTab(NA,2))
+
+    do i = 1, NA
+        do j = 1, 2
+           SommetFinal = SIF(i,2)
+           SommetInitial = SIF(i,1)
+
+          VectorTab(i,j) = SXY(SommetFinal,j) - SXY(SommetInitial,j)
+
+       end do
+!           print*,"ITERATION: ",i
+!           print*,"SommetFinal = SIF(i,2)",SommetFinal
+!           print*,"Coordonnées X Sommet Final",SXY(SommetFinal,1)
+!           print*,"Coordonnées Y Sommet Final",SXY(SommetFinal,2)
+!           print*,"SommetInitial = SIF(i,1)",SommetInitial
+!           print*,"Coordonnées X Sommet Initial",SXY(SommetInitial,1)
+!           print*,"Coordonnées Y Sommet Initial",SXY(SommetInitial,2)
+!           print*, i
+!           print*, j
+!           print*, "VectorTab(:,i)", VectorTab(:,i)
+!
+    end do
+
+    end subroutine GetVectorTable
+
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !SUBROUTINE
+    subroutine GetNorme(a,norme)
+     !GetNorme Consomme X,Y retourne Norme
+        !
+        !
+        !***********************************************************************************************************!
+        !Specification
+
+            !integer,  intent(out),allocatable, dimension(:,:) :: VectorTab
+            integer, intent(in)                                :: a
+            real,   intent(out)                                :: norme
+
+        !***********************************************************************************************************!
+        !Declaration
+            !logical                         ::exist
+            integer                         ::i, j
+            integer                         ::SommetFinal, SommetInitial
+            !character(20)                   ::str
+            !character(1)                    ::sep
+            !integer, dimension(3)           ::elmt
+
+        !***********************************************************************************************************!
+        !Body
+        norme = sqrt( float( VectorTable(a,1)*VectorTable(a,1) ) + float( VectorTable(a,2)*VectorTable(a,2) ) )
+
+    end subroutine GetNorme
+
+
+
+
+ !***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !SUBROUTINE
+    subroutine GetProduit(a,b, produitscalaire, determinant)
+    !GetProduitScalaire Consomme deux arcs a et b, retourne leur produit scalaire et determinant
+        !
+        !
+        !***********************************************************************************************************!
+        !Specification
+
+            !integer,  intent(out),allocatable, dimension(:,:) :: VectorTab
+            integer, intent(in)                                :: a, b
+            real,   intent(out)                                :: produitscalaire, determinant
+
+        !***********************************************************************************************************!
+        !Declaration
+            !logical                        ::exist
+            integer                         ::i, j
+
+        !***********************************************************************************************************!
+        !Body
+
+        produitscalaire = float( VectorTable(1,a)*VectorTable(1,b) + VectorTable(2,a)*VectorTable(2,b) )
+        determinant = float( VectorTable(1,a)*VectorTable(2,b) - VectorTable(2,a)*VectorTable(1,b) )
+
+    end subroutine GetProduit
+
+
+
+
+
+
+!***********************************************************************************************************!
+!FUNCTIONS!
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !FUNCTION
+    real function FUNC_GetProduitScalaire(a,b) result ( produitscalaire )
+    !FUNC_GetProduitScalaire Consomme deux vecteurs a et b, retourne leur produit scalaire
+        ! - utilise VectorTab issue de GetVectorTable
+        !
+        !***********************************************************************************************************!
+        !Specification
+
+            !integer,  intent(out),allocatable, dimension(:,:) :: VectorTab
+            integer, intent(in)                                :: a, b
+
+        !***********************************************************************************************************!
+        !Declaration
+
+        !***********************************************************************************************************!
+        !Body
+!        print *, VectorTable(1,a), "*",VectorTable(1,b)
+!        print *, VectorTable(2,a), "*",VectorTable(2,b)
+
+        produitscalaire = float( VectorTable(a,1)*VectorTable(b,1) + VectorTable(a,2)*VectorTable(b,2) )
+
+    end function FUNC_GetProduitScalaire
+
+
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !FUNCTION
+    real function FUNC_GetDeterminant(a,b) result ( Determinant )
+    !FUNC_GetProduitScalaire Consomme deux vecteurs a et b, retourne leur produit scalaire
+        ! - utilise VectorTab issue de GetVectorTable
+        !
+        !***********************************************************************************************************!
+        !Specification
+
+            !integer,  intent(out),allocatable, sdimension(:,:) :: VectorTab
+            integer, intent(in)                                :: a, b
+
+        !***********************************************************************************************************!
+        !Declaration
+
+        !***********************************************************************************************************!
+        !Body
+!        print *, VectorTable(1,a), "*",VectorTable(2,b)
+!        print *, VectorTable(2,A), "*",VectorTable(1,b)
+
+        determinant = float( VectorTable(a,1)*VectorTable(b,2) - VectorTable(a,2)*VectorTable(b,1) )
+
+    end function FUNC_GetDeterminant
+
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !FUNCTION
+    real function FUNC_GetNorme(a) result (norme)
+     !GetNorme Consomme X,Y retourne Norme
+        !
+        !
+        !***********************************************************************************************************!
+        !Specification
+
+            !integer,  intent(out),allocatable, dimension(:,:) :: VectorTab
+            integer, intent(in)                                :: a
+
+        !***********************************************************************************************************!
+        !Declaration
+
+        !***********************************************************************************************************!
+        !Body
+
+        norme = sqrt( float( VectorTable(a,1)*VectorTable(a,1) ) + float( VectorTable(a,2)*VectorTable(a,2) ) )
+
+    end function FUNC_GetNorme
+
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !FUNCTION
+    real function FUNC_Angle(a,b) result (Angle)
+     !GetNorme retourne l'angle orienté entre a et b
+        !
+        !
+        !***********************************************************************************************************!
+        !Specification
+
+            !integer,  intent(out),allocatable, dimension(:,:) :: VectorTab
+            integer, intent(in)                                :: a,b
+
+
+        !***********************************************************************************************************!
+        !Declaration
+            real                                               :: determinant, normea, normeb, produitscalaire
+        !***********************************************************************************************************!
+        !Body
+
+    produitscalaire = FUNC_GetProduitScalaire(a,b)
+    determinant = FUNC_GetDeterminant(a,b)
+    normea = FUNC_GetNorme(a)
+    normeb = FUNC_GetNorme(b)
+
+    angle = acos( produitscalaire / ( normea * normeb ) )
+    angle = (angle * 180) / pi
+    if ( determinant < 0 ) then
+        angle = -1 * angle
+    end if
+    angle = 180 - angle
+
+
+    end function FUNC_Angle
+
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !FUNCTION
+        real function FUNC_GoLeft(vect_ref,Table_des_Successeurs,nss) result (arc_a_gauche)
+             !FUNC_GoLeft retourne le numéro de l'arc "à gauche" (correspondant à l'index SIF pour parcourir le graphe
+             !à la recherche de domaines.
+                !   prend vect_ref en entrée, le vecteur référence
+                !   parcours une table des vecteurs successeur à vect_ref
+                !   REQUIERT les modules GetVectorTable, PSA
+                !   REQUIERT les tables SIF, Table_des_successeurs et sa cardinalité nss (from module topologie, subroutine PSA) , SXY
+                !***********************************************************************************************************!
+                !Specification
+
+                    integer, intent(in)                                :: vect_ref,nss
+                    integer, intent(in), dimension (:), allocatable :: Table_des_successeurs
+
+
+                !***********************************************************************************************************!
+                !Declaration
+                    real                                               :: angle
+                    integer,  dimension (nss)                          :: Tab_angle
+                    integer                                            :: i,j,k
+                !***********************************************************************************************************!
+                !Body
+
+        do i = 1,nss
+
+            k = Table_des_successeurs(i)
+            angle = FUNC_Angle( vect_ref, k )
+            Tab_angle(i) = angle
+            if (i == 1) then
+            arc_a_gauche = Table_des_successeurs(i)
+            else if ( Tab_angle(i) < Tab_angle(i-1) ) then
+            arc_a_gauche = Table_des_successeurs(i)
+            end if
+
+        end do
+
+        end function FUNC_GoLeft
+
+end module parcours_graphe
+
+
+!***********************************************************************************************************!
+
 !-----------------------------
 !PROGRAM
 
@@ -624,84 +1105,182 @@ program MAIN
 use tables_de_graphe
 use lire_donnees
 use topologie
+use parcours_graphe
 
 
 !Declaration
     implicit none
-    character(200)          ::path
+    character(200)          ::pathSIF, pathSXY
     integer                 ::i,j
     !Variables pour stocker les sommets et les arcs
-    integer, allocatable, dimension (:) :: TESS, TPSS, TPSA
-    integer                :: nsommet
+    !Declaration Parametres formels pour Module Topologie
+    integer, allocatable, dimension (:) :: TESS, TPSS, TPSA, Table_des_successeurs
+    !Declaration Parametres formels pour Module Parcours de Graphe
+    !integer, allocatable, dimension (:,:) :: VectorTable
+    real                   :: norme
+
+    integer                :: nsommet,nss
+    real                   :: lgr
+    !dummy variable
+    integer                ::dummyInteger
 !-----------------------------
 
 !-----------------------------
 !Body
-    path = "./data/SIF.txt"
+    pathSIF = "./DATA/SIF.txt"
+    pathSXY = "./DATA/sxy.txt"
 
+    !Allocation table Topologie:
+    !Allocation de la table SIF
     !Obtenir NA
-    print *, "SUBROUTINE NUMRECORD"
-    call NUMRECORD(path, NA)
+    print *, "SUBROUTINE NUMRECORD (nbr arcs)"
+    call NUMRECORD(pathSIF, NA)
     print *, "Nombre de ligne dans le fichier ", NA
 
-    !Allocation de la table SIF
     allocate(SIF(2,NA))
+
+
+    !Allocation Tables Metrique:
+    !Allocation de la table SXY
+    !Obtenir NS
+
+    print *, "SUBROUTINE NUMRECORD  (nbr sommets)"
+    call NUMRECORD(pathSXY, NS)
+    print *, "Nombre de ligne dans le fichier ", NS
+    allocate(SXY(2,NS))
+
+    !Allocation Tables Parcours Graphe:
+    !Allocation de la table VectorTable
+    !nombre d'éléments identiques à NA
+    allocate(VectorTable(NA,2))
+
 
     !Obtenir la table SIF
     print *, "appel de la subroutine READFILE"
-    call READFILE(path, SIF, NA)
+    call READFILE(pathSIF, SIF, NA)
     print *, "Fin de l'appel de subroutine"
     print *, "************************************************************************************"
 
-    !Affichage de la table SIF
-    do i = 1, NA
-        print *, "Arc: ", i
-        do j = 1, 2
-            print *, SIF(i,j)
-        end do
-        print *, ""
-    end do
+
+    !Obtenir la table SXY
+    print *, "appel de la subroutine READFILE"
+    call READFILE(pathSXY, SXY, NS)
+    print *, "Fin de l'appel de subroutine Mise en mémoire"
     print *, "************************************************************************************"
 
-    allocate(TESS(NA))
-
-    !Test ESS
-    nsommet = 0
-    print *, "TEST ESS"
-    call ESS (5, TESS, nsommet, 1 )
-    do i = 1, nsommet
-        print *, TESS(i)
-    end do
-    print *,""
+    !Obtenir la table VectorTable
+    print *, "appel de la subroutine GetVectorTable"
+    call GetVectorTable(VectorTable)
+    print *, "Fin de l'appel de subroutine Mise en mémoire"
     print *, "************************************************************************************"
-    !Fin test ESS
 
-    allocate(TPSS(NA))
-
-    !Test PSS
-    nsommet = 0
-    print *, "TEST PSS"
-    call PSS (5, TPSS, nsommet, 1 )
-    print *, "nb sommets ", nsommet
-    do i = 1, nsommet
-        print *, TPSS(i)
+    !Obtenir une norme + Affichage
+    print *, "appel de la subroutine GetNorme"
+    do i = 1,NA
+        call GetNorme(i,norme)
+        print*, norme
     end do
-    print *,""
-    print *, "************************************************************************************"
-    !Fin test PSS
+    print*," "
+    lgr = FUNC_GetDeterminant(1,2)
+    print*,lgr
+    lgr = FUNC_GetProduitScalaire(1,2)
+    print*,lgr
+    lgr = FUNC_GetProduitscalaire(1,1)
+    print*,lgr
+    lgr = FUNC_Angle(1,3)
+    print*,lgr
 
-    allocate(TPSA(NA))
+
+!    !Affichage de la table SIF
+!    do i = 1, NA
+!        print *, "Arc: ", i
+!        do j = 1, 2
+!            print *, SIF(i,j)
+!        end do
+!        print *, ""
+!    end do
+!    print *, "************************************************************************************"
+
+!    !Affichage de la table SXY
+!    do i = 1, NS
+!        print *, "Sommet: ", i
+!        do j = 1, 2
+!            print *, SXY(i,j)
+!        end do
+!        print *, ""
+!    end do
+!    print *, "************************************************************************************"
+
+!    !Affichage de la table VectorTable
+!    do i = 1, NA
+!            print *, "Vecteur/arc: ", i
+!        do j = 1, 2
+!            print *, VectorTable(j,i)
+!        end do
+!        print *, ""
+!   end do
+!
+!
+!    print *, "************************************************************************************"
+
+!!***********************************************************************************************************!
+!!  TEST DES MODULES TOPOLOGIE/METRIQUE BOUILLE
+
+!    allocate(TESS(NA))
+!
+!    !Test ESS
+!    nsommet = 0
+!    print *, "TEST ESS"
+!    call ESS (5, TESS, nsommet, 1 )
+!    do i = 1, nsommet
+!        print *, TESS(i)
+!    end do
+!    print *,""
+!    print *, "************************************************************************************"
+!    !Fin test ESS
+!
+!    allocate(TPSS(NA))
+!
+!    !Test PSS
+!    nsommet = 0
+!    print *, "TEST PSS"
+!    call PSS (5, TPSS, nsommet, 1 )
+!    print *, "nb sommets ", nsommet
+!    do i = 1, nsommet
+!        print *, TPSS(i)
+!    end do
+!    print *,""
+!    print *, "************************************************************************************"
+!    !Fin test PSS
+!
+    allocate(Table_des_successeurs(NA))
     !Test PSA
-    nsommet = 0
-    print *, "TEST PSA"
-    call PSA (5, TPSA, nsommet, 1 )
-    print *, "nb arcs ", nsommet
-    do i = 1, nsommet
-        print *, TPSA(i)
+
+    print *, "TEST PSA _ Arc "
+    call PSA (7, Table_des_successeurs, nss, 2 )
+    print *, "nb arcs ", nss
+    do i = 1, nss
+        print *, Table_des_successeurs(i)
     end do
     print *,""
     print *, "************************************************************************************"
-    !Fin test PSS
+!    !Fin test PSS
+
+!test FUNC_GoLeft
+
+dummyInteger = FUNC_GoLeft(18,Table_des_Successeurs,nss)
+print*,dummyInteger
+print*,nss
+    !Test PSS
+
+    !Test Fonctionsans type LGR_ARC in Module metrique
+    !NON FONCTIONNEL, RETOURNE UNE ERREUR MEMOIRE
+    !#0  0x7FCEA4966117
+    !#1  0x7FCEA49666F4
+    !#2  0x7FCEA42B70AF
+    !#3  0x402BA5 in __metrique_MOD_lgr_arc
+    !#4  0x404248 in MAIN__ at core.f90:?
+    !lgr = LGR_ARc( 1)
 
 
 end program MAIN
