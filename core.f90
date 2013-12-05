@@ -784,47 +784,25 @@ module metrique_vectorielle
 !***********************************************************************************************************!
 !***********************************************************************************************************!
 !A REMPLIR!!!!!!!!!!!
-! ce module contient des subroutine permettant des opérations vectorielle sur les TABLES
-! sur vecteurs decrivant la metrique d'un
-! graphe, ainsi que les procedures de base operant sur la
-! metrique de ce graphe :
-!     -
-!     -
-!     -
+! ce module contient des subroutine permettant des opérations vectorielle basiques sur les TABLES
+! sur vecteurs decrivant la metrique d'un graphe:
 !
-! il utilise le module "??????"
+!     SUB-ROUTINES
+!     OK - getVectorTable (cf getVectorCoordinates invector.py), calcul des vecteurs a partir de la Table SIF et SXY
+!     OK - GetNorme non utilisé
+!     OK - GetProduit non utilisé
+!     FONCTIONS
+!     OK - FUNC_GetProduitScalaire
+!     OK - FUNC_GetDeterminant
+!     OK - FUNC_GetNorme
+!     OK - FUNC_GetOrientedAngle
+!
 !***********************************************************************************************************!
 !***********************************************************************************************************!
     use metrique                                            !
    !---------------------
-end module metrique_vectorielle
-
-
-
-
-module parcours_graphe
-!***********************************************************************************************************!
-!***********************************************************************************************************!
-!***********************************************************************************************************!
-! ce module contient des routines et fonctions implementées par le groupe pour parcourir le graphe
-! graphe, ainsi que les procedures de base operant sur la
-! metrique de ce graphe :
-!     OK - getVectorTable (cf getVectorCoordinates invector.py), calcul des vecteurs a partir de la Table SIF et SXY
-!      - getVectorDeterminant , calcul determinant
-!     OK - getNorme , calcule norme d'un vecteur
-!      - getProduitScalaire , calcul de produit scalaire
-!      - getLeftArc, retourne l'arc le plus à gauche (????A EXPLICITER????)
-!
-! il utilise le module ????"Lire Donnée???"
-!***********************************************************************************************************!
-!***********************************************************************************************************!
-    use metrique_vectorielle                                             !
-   !---------------------
-implicit none
 
 contains
-
-
 
 !***********************************************************************************************************!
     !***********************************************************************************************************!
@@ -1019,8 +997,8 @@ contains
 !***********************************************************************************************************!
     !***********************************************************************************************************!
     !FUNCTION
-    real function FUNC_Angle(a,b) result (Angle)
-     !GetNorme retourne l'angle orienté entre a et b
+    real function FUNC_OrientedAngle(a,b) result (Angle)
+     !GetNorme retourne l'angle orienté entre deux vecteur a et b, sens direct, 0<angle<360
         !
         !
         !***********************************************************************************************************!
@@ -1047,9 +1025,139 @@ contains
         angle = -1 * angle
     end if
     angle = 180 - angle
+    print*,a,b
+    print*,angle
+
+    end function FUNC_OrientedAngle
 
 
-    end function FUNC_Angle
+end module metrique_vectorielle
+
+
+
+
+module parcours_graphe
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+! ce module contient des routines et fonctions implementées par le groupe pour parcourir le graphe
+! graphe, ainsi que les procedures de base operant sur la
+! metrique de ce graphe :
+!      FONCTION
+!      - FUNC_GoLeft, consomme table des prédecesseurs/successeur, retourne la val
+!
+! il utilise les Focntions de calculs du module metrique vectorielle.
+!***********************************************************************************************************!
+!***********************************************************************************************************!
+    use metrique_vectorielle                                             !
+   !---------------------
+implicit none
+
+contains
+!***********************************************************************************************************!
+    !***********************************************************************************************************!
+    !SUBROUTINE
+    recursive subroutine GetGD_Table(arc_ref, SommetsExplorationBool,ArcsExplorationBool,ArcsHistoriqueParcours, compteur)
+    !GetVectorTable Consomme SIF et SXYZ, retourne Table GD
+    !   -SIF :: from Table_de_graphe
+    !   -SXY :: from Table_de_graphe
+    !   Utilise ...
+    !***********************************************************************************************************!
+    !Specification
+
+        !integer,  intent(out),allocatable, dimension(:,:) :: table_GD
+        integer, intent(inout)                            :: arc_ref, compteur
+        logical, intent(inout),  dimension(NS)            :: SommetsExplorationBool
+        logical, intent(inout),  dimension(NA)            :: ArcsExplorationBool
+        integer, intent(inout),  dimension (NA)           :: ArcsHistoriqueParcours
+
+
+    !***********************************************************************************************************!
+    !Declaration
+        integer                                           :: i, j, k,  arc_a_gauche
+        integer                                           :: PTCr1, PTCr2
+        integer                                           :: SommetFinal, SommetInitial
+        integer, allocatable, dimension (:)               :: Table_bascule, Table_des_successeurs
+
+        !Cardinalité des Tables
+        integer                                           :: nss,nta
+        !character(20)                   ::str
+        !character(1)                    ::sep
+        !integer, dimension(3)           ::elmt
+
+    !***********************************************************************************************************!
+    !Body
+
+    ArcsExplorationBool(arc_ref) = .true.
+    ArcsHistoriqueParcours(compteur) = arc_ref
+
+    do i=1, 2
+        j = SIF(arc_ref,i)
+        SommetsExplorationBool(j) = .true.
+        print*,"Sommet decouvert: ",j
+    end do
+
+
+   ! recupere tout arc entrant ou sortant du sommet final de arc_ref.
+   ! Traitement séparé Entrant et sortant
+   PTCr1 = 0
+   allocate( Table_des_successeurs(NA) )
+   do i = 1 , 1
+   allocate( Table_bascule(NA) )
+        print *, "TEST PSA _ Arc ", arc_ref
+
+        !call ESS( j, Table_bascule, nta, i)
+        call PSA( arc_ref, Table_bascule, nta, 2)
+        !print*,"nta: ", nta
+            do k = ( PTCr1 + 1 ) , ( PTCr1 + nta )
+                Table_des_successeurs(k) = Table_bascule(k)
+            end do
+        PTCr1 = nta
+        deallocate(Table_bascule )
+    end do
+
+    !print*,Table_des_successeurs(1:PTCr1)
+
+
+    arc_a_gauche = FUNC_GoLeft(arc_ref,Table_des_Successeurs,nta)
+
+
+    print*,"arc à gauche: ",arc_a_gauche
+
+    if ( ArcsExplorationBool(arc_a_gauche) .EQV. .false. ) then
+
+        !ArcsExploration(arc_a_gauche) = .true.
+        j = SIF(arc_a_gauche,2)
+        SommetsExplorationBool(j) = .true.
+        arc_ref = arc_a_gauche
+
+       ! print*,compteur
+        compteur = compteur + 1
+        call GetGD_Table(arc_ref, SommetsExplorationBool,ArcsExplorationBool, ArcsHistoriqueParcours, compteur)
+
+    else
+        !on a trouvé une fermeture
+        print*,"fermeture sur arc: ",arc_a_gauche
+    end if
+
+
+
+!1  procedure DFS(G,v):
+!2      label v as discovered
+!3      for all edges e in G.adjacentEdges(v) do
+!4          if edge e is unexplored then
+!5              w ← G.adjacentVertex(v,e)
+!6              if vertex w is unexplored then
+!7                  label e as a discovered edge
+!8                  recursively call DFS(G,w)
+!9              else
+!10                 label e as a back edge
+!11     label v as explored
+!
+
+
+    end subroutine GetGD_Table
+
 
 !***********************************************************************************************************!
     !***********************************************************************************************************!
@@ -1079,7 +1187,7 @@ contains
         do i = 1,nss
 
             k = Table_des_successeurs(i)
-            angle = FUNC_Angle( vect_ref, k )
+            angle = FUNC_OrientedAngle( vect_ref, k )
             Tab_angle(i) = angle
             if (i == 1) then
             arc_a_gauche = Table_des_successeurs(i)
@@ -1116,10 +1224,15 @@ use parcours_graphe
     !Declaration Parametres formels pour Module Topologie
     integer, allocatable, dimension (:) :: TESS, TPSS, TPSA, Table_des_successeurs
     !Declaration Parametres formels pour Module Parcours de Graphe
-    !integer, allocatable, dimension (:,:) :: VectorTable
     real                   :: norme
+    logical, allocatable  ,dimension(:)            :: SommetsExplorationBool
+    logical, allocatable , dimension(:)            :: ArcsExplorationBool
+    integer, allocatable,  dimension (:)           :: ArcsHistoriqueParcours
+    integer                                        :: Arc_ref
 
-    integer                :: nsommet,nss
+
+    integer                :: nsommet,nss,compteur
+
     real                   :: lgr
     !dummy variable
     integer                ::dummyInteger
@@ -1174,21 +1287,21 @@ use parcours_graphe
     print *, "Fin de l'appel de subroutine Mise en mémoire"
     print *, "************************************************************************************"
 
-    !Obtenir une norme + Affichage
-    print *, "appel de la subroutine GetNorme"
-    do i = 1,NA
-        call GetNorme(i,norme)
-        print*, norme
-    end do
-    print*," "
-    lgr = FUNC_GetDeterminant(1,2)
-    print*,lgr
-    lgr = FUNC_GetProduitScalaire(1,2)
-    print*,lgr
-    lgr = FUNC_GetProduitscalaire(1,1)
-    print*,lgr
-    lgr = FUNC_Angle(1,3)
-    print*,lgr
+!    !Obtenir une norme + Affichage
+!    print *, "appel de la subroutine GetNorme"
+!    do i = 1,NA
+!        call GetNorme(i,norme)
+!        print*, norme
+!    end do
+!    print*," "
+!    lgr = FUNC_GetDeterminant(1,2)
+!    print*,lgr
+!    lgr = FUNC_GetProduitScalaire(1,2)
+!    print*,lgr
+!    lgr = FUNC_GetProduitscalaire(1,1)
+!    print*,lgr
+!    lgr = FUNC_OrientedAngle(1,3)
+!    print*,lgr
 
 
 !    !Affichage de la table SIF
@@ -1253,35 +1366,32 @@ use parcours_graphe
 !    print *, "************************************************************************************"
 !    !Fin test PSS
 !
-    allocate(Table_des_successeurs(NA))
-    !Test PSA
+!    allocate(Table_des_successeurs(NA))
+!    !Test PSA
+!
+!    print *, "TEST PSA _ Arc "
+!    call PSA (7, Table_des_successeurs, nss, 2 )
+!    print *, "nb arcs ", nss
+!    do i = 1, nss
+!        print *, Table_des_successeurs(i)
+!    end do
+!    print *,""
+!    print *, "************************************************************************************"
+!!    !Fin test PSS
+!
+!    !test FUNC_GoLeft
+!
+!    dummyInteger = FUNC_GoLeft(18,Table_des_Successeurs,nss)
 
-    print *, "TEST PSA _ Arc "
-    call PSA (7, Table_des_successeurs, nss, 2 )
-    print *, "nb arcs ", nss
-    do i = 1, nss
-        print *, Table_des_successeurs(i)
-    end do
-    print *,""
-    print *, "************************************************************************************"
-!    !Fin test PSS
 
-!test FUNC_GoLeft
+compteur = 1
+allocate( ArcsHistoriqueParcours(NA), ArcsExplorationBool(NA), SommetsExplorationBool(NS) )
+Arc_ref = 4
+call GetGD_Table(Arc_ref, SommetsExplorationBool,ArcsExplorationBool, ArcsHistoriqueParcours, compteur)
 
-dummyInteger = FUNC_GoLeft(18,Table_des_Successeurs,nss)
-print*,dummyInteger
-print*,nss
-    !Test PSS
-
-    !Test Fonctionsans type LGR_ARC in Module metrique
-    !NON FONCTIONNEL, RETOURNE UNE ERREUR MEMOIRE
-    !#0  0x7FCEA4966117
-    !#1  0x7FCEA49666F4
-    !#2  0x7FCEA42B70AF
-    !#3  0x402BA5 in __metrique_MOD_lgr_arc
-    !#4  0x404248 in MAIN__ at core.f90:?
-    !lgr = LGR_ARc( 1)
-
+print*, SommetsExplorationBool
+print*,ArcsExplorationBool
+print*, ArcsHistoriqueParcours
 
 end program MAIN
 !-----------------------------
